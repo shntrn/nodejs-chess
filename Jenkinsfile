@@ -29,10 +29,13 @@ pipeline {
             }
             steps {
                 sh  'docker build -f Dockerfile.server -t shntrn/chessapp_server .'
+                withCredenitials([string(credentialsId: 'docker_hub', variables: 'docker_hub')]) {
+                    sh "login -u shntrn -p ${docker_hub}
+                }
                 sh  'docker push shntrn/chessapp_server:latest'
             }
         }
-        stage ("Run client container on Kubernetes") {
+        stage ("Deploy client container on Kubernetes") {
             agent {
                 label 'kubernetes'
             }
@@ -40,7 +43,7 @@ pipeline {
                 sh  'kubectl apply -f chessapp-client.yaml'
             }
         }
-        stage ("Run server container on Kubernetes") {
+        stage ("Deploy server container on Kubernetes") {
             agent {
                 label 'kubernetes'
             }
@@ -48,7 +51,7 @@ pipeline {
                 sh  'kubectl apply -f chessapp-server.yaml'
             }
         }
-        stage ("Run DB container on Kubernetes") {
+        stage ("Deploy DB container on Kubernetes") {
             agent {
                 label 'kubernetes'
             }
