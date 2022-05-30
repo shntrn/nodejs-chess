@@ -17,10 +17,11 @@ pipeline {
                 label 'kubernetes'
             }
             steps {
-                sh 'git clone -b master https://github.com/shntrn/nodejs-chess'
-                sh  'docker build -f Dockerfile.app -t shntrn/chessapp_client .'
-                sh  'docker push shntrn/chessapp_client:latest'
-            }
+                sh  'docker build -f Dockerfile.server -t shntrn/chessapp_client .'
+                
+                withDockerRegistry([ credentialsId: 'docker_hub', url: '' ]) {
+                    sh  'docker push shntrn/chessapp_client:latest'
+                }
         }
 
         stage ("Creating docker container - backend") {
@@ -29,10 +30,10 @@ pipeline {
             }
             steps {
                 sh  'docker build -f Dockerfile.server -t shntrn/chessapp_server .'
-                withCredenitials([string(credentialsId: 'docker_hub', variables: 'docker_hub')]) {
-                    sh 'docker login -u shntrn -p ${docker_hub}'
+                
+                withDockerRegistry([ credentialsId: 'docker_hub', url: '' ]) {
+                    sh  'docker push shntrn/chessapp_server:latest'
                 }
-                sh  'docker push shntrn/chessapp_server:latest'
             }
         }
         stage ("Deploy client container on Kubernetes") {
