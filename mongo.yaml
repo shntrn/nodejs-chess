@@ -24,7 +24,7 @@ spec:
       volumes:
         - name: mongo-volume
           hostPath:
-            path: /home/shntrn/2nd_demo/k8s/mongo-volume
+            path: /home/shntrn/mongo-volume
             type: DirectoryOrCreate
 ---
 kind: Service
