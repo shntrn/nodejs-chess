@@ -1,5 +1,8 @@
 pipeline {
     agent none
+    environment {
+       API_URL='http://10.26.0.252:8080'
+    }
     stages {
         stage ("Install modules & install") {
             agent {
@@ -17,7 +20,7 @@ pipeline {
                 label 'kubernetes'
             }
             steps {
-                sh  'docker build -f Dockerfile.app -t shntrn/chessapp_client .'
+                sh  'docker build -f Dockerfile.app -t shntrn/chessapp_client . --build-arg API_URL=${API_URL}'
                 
                 withDockerRegistry([ credentialsId: 'docker_hub', url: '' ]) {
                     sh  'docker push shntrn/chessapp_client:latest'
