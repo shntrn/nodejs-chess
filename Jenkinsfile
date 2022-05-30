@@ -22,6 +22,7 @@ pipeline {
                 withDockerRegistry([ credentialsId: 'docker_hub', url: '' ]) {
                     sh  'docker push shntrn/chessapp_client:latest'
                 }
+           }
         }
 
         stage ("Creating docker container - backend") {
