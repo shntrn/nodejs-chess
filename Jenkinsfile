@@ -30,7 +30,7 @@ pipeline {
             steps {
                 sh  'docker build -f Dockerfile.server -t shntrn/chessapp_server .'
                 withCredenitials([string(credentialsId: 'docker_hub', variables: 'docker_hub')]) {
-                    sh "login -u shntrn -p ${docker_hub}
+                    sh 'docker login -u shntrn -p ${docker_hub}'
                 }
                 sh  'docker push shntrn/chessapp_server:latest'
             }
