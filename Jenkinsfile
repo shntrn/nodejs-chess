@@ -17,7 +17,7 @@ pipeline {
                 label 'kubernetes'
             }
             steps {
-                sh  'docker build -f Dockerfile.client -t shntrn/chessapp_client .'
+                sh  'docker build -f Dockerfile.app -t shntrn/chessapp_client .'
                 
                 withDockerRegistry([ credentialsId: 'docker_hub', url: '' ]) {
                     sh  'docker push shntrn/chessapp_client:latest'
