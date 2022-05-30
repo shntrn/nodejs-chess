@@ -18,7 +18,7 @@ pipeline {
             }
             steps {
                 sh 'git clone -b master https://github.com/shntrn/nodejs-chess'
-                sh  'docker build -f Dockerfile.app -t shntrn/chessapp_client'
+                sh  'docker build -f Dockerfile.app -t shntrn/chessapp_client .'
                 sh  'docker push shntrn/chessapp_client:latest'
             }
         }
@@ -28,7 +28,7 @@ pipeline {
                 label 'kubernetes'
             }
             steps {
-                sh  'docker build -f Dockerfile.server -t shntrn/chessapp_server'
+                sh  'docker build -f Dockerfile.server -t shntrn/chessapp_server .'
                 sh  'docker push shntrn/chessapp_server:latest'
             }
         }
