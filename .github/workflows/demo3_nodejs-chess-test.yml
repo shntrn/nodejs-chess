@@ -52,5 +52,5 @@ jobs:
         with:
           app-name: 'nodejs-chess-test'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_50981B00EF8943748F0E73B766321892 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_A758C9248FA841CDBF39A01B1FE0F612 }}
           package: .
