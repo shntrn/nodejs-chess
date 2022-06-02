@@ -1,9 +1,0 @@
-FROM node:11
-WORKDIR /usr/src/app
-COPY package*.json ./
-RUN npm install phantomjs-prebuilt@2.1.16 --ignore-scripts
-RUN npm install
-COPY . .
-EXPOSE 8081
-CMD ["npm", "start"]
-
