@@ -9,7 +9,7 @@ pipeline {
                 label 'master'
             }
             steps {
-                nodejs('Node-11') {
+                nodejs('Node-14') {
                     sh 'npm install'
                     sh 'npm run build'
                 }
