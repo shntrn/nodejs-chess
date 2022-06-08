@@ -1,7 +1,7 @@
 pipeline {
     agent none
     environment {
-       API_URL='http://nodjs-chess-server.azurewebsites.net/'
+       API_URL='https://nodjs-chess-server.azurewebsites.net/'
     }
     stages {
         stage ("Install modules & install") {
