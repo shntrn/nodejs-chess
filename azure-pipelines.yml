@@ -40,6 +40,7 @@ stages:
     
   - job: Test
     displayName: Test
+    dependsOn: Build
     
     steps:
     - script: |
@@ -48,6 +49,7 @@ stages:
 
   - job: SaveArtifacts
     displayName: 'Save Artifacts'
+    dependsOn: Test
     steps:
 
     - publish: '$(Build.SourcesDirectory)/lib/client'
