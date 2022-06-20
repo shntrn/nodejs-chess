@@ -1,0 +1,140 @@
+# Node.js
+# Build a general Node.js project with npm.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
+
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+- group: nodejs-chess-vargroup
+- name: BACK_END_NAME
+  value: 'nodejs-chess-server'
+- name: PORT
+  value: '8081'
+    
+stages: 
+- stage: Build
+  displayName: Build image
+  variables:
+  - name: API_URL
+    value: 'https://$(BACK_END_NAME).azurewebsites.net'
+  jobs:
+  - job: Build
+    displayName: Build
+    
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '14.x'
+      displayName: 'Install Node.js'
+
+    - script: |
+        npm install
+        npm run build
+      displayName: 'npm install and build'
+
+    - publish: '$(Build.SourcesDirectory)/lib/client'
+      displayName: 'Publish client static site'
+      artifact: dropClient 
+    
+    - task: ArchiveFiles@2
+      displayName: 'Archive Server Files'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true  
+    
+    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      displayName: 'Publish Server Files'
+      artifact: dropServer
+  
+- stage: Provision
+  displayName: 'Terraforming on Azure'
+  dependsOn: Build
+  jobs:
+  - job: Provision
+    displayName: 'Provisioning Container Instance'
+    variables:
+    - group: TerraformEnvVars    
+    
+    steps:
+    - script: |
+        set -e
+
+        terraform init -input=false
+        terraform apply -input=false -auto-approve
+        terraform output -json > TerraformOutputs.json
+
+      name: 'RunTerraform'
+      displayName: 'Run terraform'
+      workingDirectory: './Terraform'
+      env:
+        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        ARM_TENANT_ID: $(ARM_TENANT_ID)
+        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+        TF_VAR_backend_name: $(BACK_END_NAME)
+    
+    - bash: |
+        ACC_NAME=$(cat $(Build.SourcesDirectory)/Terraform/TerraformOutputs.json | jq '.fe_storage_account_name.value' -r)
+        echo "##vso[task.setvariable variable=Storage_name;isOutput=true]$ACC_NAME"
+        ACC_KEY=$(cat $(Build.SourcesDirectory)/Terraform/TerraformOutputs.json | jq '.fe_storage_account_primary_key.value' -r)
+        echo "##vso[task.setvariable variable=Acc_Key;isOutput=true]$ACC_KEY"
+      name: outputsVars
+      
+
+- stage: DeployFrondEnd
+  displayName: 'Deploy FronEnd'
+  dependsOn: 
+   - Provision
+   - Build
+  variables:
+    Storage_name: $[ stageDependencies.Provision.Provision.outputs['outputsVars.Storage_name'] ] 
+    Acc_Key: $[ stageDependencies.Provision.Provision.outputs['outputsVars.Acc_Key'] ] 
+  
+  jobs:
+  - job: DeployFrontEnd
+    displayName: 'Deploy Frontend to Blob storage'
+    steps:
+    - download: current
+      artifact: dropClient
+    - task: AzureCLI@2
+      inputs:        
+        azureSubscription: 'Azure subscription 1 (d1673611-66dc-449c-9fb5-b755c18b24e1)'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: "az storage blob upload-batch -d '$web' -s ./ --account-name $(Storage_name) --account-key $(Acc_Key)"
+        workingDirectory: '$(Pipeline.Workspace)/dropClient'
+        
+- stage: DeployBackEnd
+  displayName: 'Deploy BackEnd'
+  dependsOn: 
+   - Provision
+   - Build
+  variables:
+  - group: AzureContainerRegistryCreds
+  
+  jobs:
+  - job: DeployBackEnd
+    displayName: 'Deploy Back end Azure Web App'
+    steps:
+    - download: current
+      artifact: dropServer
+      patterns: '**/*.zip'
+    
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'Azure subscription 1 (d1673611-66dc-449c-9fb5-b755c18b24e1)'
+        appType: 'webAppLinux'
+        WebAppName: '$(BACK_END_NAME)'
+        packageForLinux: '$(Pipeline.Workspace)/dropServer/*.zip'
+        RuntimeStack: 'NODE|14-lts'
+        StartupCommand: 'npm start'
+
+    
+    

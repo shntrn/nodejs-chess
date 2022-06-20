@@ -10,7 +10,7 @@
     "start": "node ./lib/server/index.js",
     "client": "gulp start",
     "test-client": "karma start test/client.config.js --single-run",
-    "test-server": "mocha --opts test/server.opts test/server/**/*.spec.js",
+    "test": "mocha --opts test/server.opts test/server/**/*.spec.js",
     "test-common": "mocha --opts test/common.opts test/common/**/*.spec.js",
     "test-all": "npm run test-client && npm run test-common && npm run test-server"
   },
