@@ -18,14 +18,14 @@ variables:
   value: '8081'
     
 stages: 
-- stage: Build
-  displayName: Build image
+- stage: Build-Test
+  displayName: Build image and test
   variables:
   - name: API_URL
     value: 'https://$(BACK_END_NAME).azurewebsites.net'
   jobs:
-  - job: Build
-    displayName: Build
+  - job: Build-Test
+    displayName: Build image and test
     
     steps:
     - task: NodeTool@0
@@ -38,19 +38,9 @@ stages:
         npm run build
       displayName: 'npm install and build'
     
-  - job: Test
-    displayName: Test
-    dependsOn: Build
-    
-    steps:
     - script: |
         npm run test
       displayName: 'npm run test'
-
-  - job: SaveArtifacts
-    displayName: 'Save Artifacts'
-    dependsOn: Test
-    steps:
 
     - publish: '$(Build.SourcesDirectory)/lib/client'
       displayName: 'Publish client static site'
