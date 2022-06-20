@@ -18,13 +18,13 @@ variables:
   value: '8081'
     
 stages: 
-- stage: BuildAndTest
+- stage: Build
   displayName: Build image and test
   variables:
   - name: API_URL
     value: 'https://$(BACK_END_NAME).azurewebsites.net'
   jobs:
-  - job: BuildAndTest
+  - job: Build
     displayName: Build image and test
     
     steps:
