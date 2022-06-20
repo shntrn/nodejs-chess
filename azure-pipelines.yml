@@ -24,7 +24,7 @@ stages:
   - name: API_URL
     value: 'https://$(BACK_END_NAME).azurewebsites.net'
   jobs:
-  - job: Build-Test
+  - job: BuildAndTest
     displayName: Build image and test
     
     steps:
