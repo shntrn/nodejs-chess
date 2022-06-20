@@ -4,6 +4,9 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
 
+trigger:
+ - demo3
+
 pool:
   vmImage: ubuntu-latest
 
@@ -34,6 +37,18 @@ stages:
         npm install
         npm run build
       displayName: 'npm install and build'
+    
+  - job: Test
+    displayName: Test
+    
+    steps:
+    - script: |
+        npm run test
+      displayName: 'npm run test'
+
+  - job: SaveArtifacts
+    displayName: 'Save Artifacts'
+    steps:
 
     - publish: '$(Build.SourcesDirectory)/lib/client'
       displayName: 'Publish client static site'
@@ -135,6 +150,4 @@ stages:
         packageForLinux: '$(Pipeline.Workspace)/dropServer/*.zip'
         RuntimeStack: 'NODE|14-lts'
         StartupCommand: 'npm start'
-
-    
     
