@@ -11,3 +11,7 @@ output "fe_storage_account_name" {
 output "api_link" {
   value = azurerm_app_service.nodejs-chess-backend.default_site_hostname
 }
+
+output "web_url" {
+  value = azurerm_storage_account.nodejschess1.primary_web_endpoint
+}

@@ -16,6 +16,8 @@ variables:
   value: 'nodejs-chess-server'
 - name: PORT
   value: '8081'
+- name: TEST
+  value: 'TEST' 
     
 stages: 
 - stage: Build
