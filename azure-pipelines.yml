@@ -17,7 +17,7 @@ variables:
 - name: PORT
   value: '8081'
 - name: TEST
-  value: 'TEST' 
+  value: 'TEST1' 
     
 stages: 
 - stage: Build
