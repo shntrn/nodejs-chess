@@ -113,7 +113,7 @@ stages:
       artifact: dropClient
     - task: AzureCLI@2
       inputs:        
-        azureSubscription: 'Azure subscription 1 (d1673611-66dc-449c-9fb5-b755c18b24e1)'
+        azureSubscription: ''$(AZ_SUB)''
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: "az storage blob upload-batch -d '$web' -s ./ --account-name $(Storage_name) --account-key $(Acc_Key) --overwrite"
@@ -138,7 +138,7 @@ stages:
     - task: AzureRmWebAppDeployment@4
       inputs:
         ConnectionType: 'AzureRM'
-        azureSubscription: 'Azure subscription 1 (d1673611-66dc-449c-9fb5-b755c18b24e1)'
+        azureSubscription: '$(AZ_SUB)'
         appType: 'webAppLinux'
         WebAppName: '$(BACK_END_NAME)'
         packageForLinux: '$(Pipeline.Workspace)/dropServer/*.zip'
