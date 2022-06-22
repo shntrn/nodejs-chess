@@ -4,9 +4,6 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
 
 
-trigger:
- - demo3
-
 pool:
   vmImage: ubuntu-latest
 
