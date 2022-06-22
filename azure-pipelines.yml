@@ -113,7 +113,7 @@ stages:
       artifact: dropClient
     - task: AzureCLI@2
       inputs:        
-        azureSubscription: ''$(AZ_SUB)''
+        azureSubscription: '$(AZ_SUB)'
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: "az storage blob upload-batch -d '$web' -s ./ --account-name $(Storage_name) --account-key $(Acc_Key) --overwrite"
