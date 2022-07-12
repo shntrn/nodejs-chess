@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chessapp-server
+  labels:
+    tier: backend
+    type: server
+spec:
+  selector:
+    matchLabels:
+      app: chessapp-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: chessapp-server
+    spec:
+      containers:
+      - name: chessapp-server
+        image: nodejschess.azurecr.io/server:latest
+        ports:
+        - containerPort: 8080
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: chessapp-server
+spec:
+  selector:
+    app: chessapp-server
+  type: LoadBalancer
+  ports:
+  - protocol: TCP
+    port: 8080

@@ -1,0 +1,172 @@
+# Node.js
+# Build a general Node.js project with npm.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
+
+
+trigger:
+ - demo3_k8s
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+- group: nodejs-chess-vargroup
+- name: tag
+  value: '$(Build.BuildId)'
+    
+stages: 
+- stage: Build
+  displayName: Build image and test
+  variables:
+  - name: API_URL
+    value: '$(BACK_END_NAME)'
+  jobs:
+  - job: Build
+    displayName: Build image and test
+    
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '14.x'
+      displayName: 'Install Node.js'
+
+    - script: |
+        npm install
+        npm run build
+      displayName: 'npm install and build'
+    
+    - script: |
+        npm run test
+      displayName: 'npm run test'
+  
+- stage: Conteinerization
+  dependsOn: Build
+  displayName: Conteinerization images to ACR
+  jobs:
+  
+  - job: ConteinerizationServer
+    displayName: 'Build Server container and push'
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'ACR'
+        repository: 'server'
+        command: 'build'
+        Dockerfile: '**/Dockerfile.server'
+        arguments: '--build-arg DB_URL=$(DB_URL)'
+        tags: |
+          $(tag)
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'ACR'
+        repository: 'server'
+        command: 'push'
+        tags: |
+           $(tag)
+
+
+
+  - job: ConteinerizationClient
+    displayName: 'Build Client container and push'
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'ACR'
+        repository: 'client'
+        command: 'build'
+        Dockerfile: '**/Dockerfile.app'
+        arguments: '--build-arg API_URL=$(BACK_END_NAME)'
+        tags: |
+          $(tag)
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'ACR'
+        repository: 'client'
+        command: 'push'
+        tags: |
+           $(tag)
+  
+- stage: Provision
+  displayName: 'Terraforming on Azure'
+  dependsOn: Build
+  jobs:
+  - job: Provision
+    displayName: 'Provisioning Container Instance'
+    variables:
+    - group: TerraformEnvVars    
+    
+    steps:
+    - script: |
+        set -e
+
+        terraform init -input=false
+        terraform apply -input=false -auto-approve
+        terraform output -json > TerraformOutputs.json
+
+      name: 'RunTerraform'
+      displayName: 'Run terraform'
+      workingDirectory: './Terraform'
+      env:
+        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        ARM_TENANT_ID: $(ARM_TENANT_ID)
+        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+        TF_VAR_backend_name: $(BACK_END_NAME)
+ 
+          
+
+- stage: DeploymentFrontEndbash
+  jobs:
+  - job: Deploy
+    steps:
+
+    - bash: |
+        export BuildID=$(Build.BuildId)
+        sed -i -e "s/latest/$BuildID/g" $(Build.SourcesDirectory)/Kubernetes/chess-app-client.yml 
+        cat $(Build.SourcesDirectory)/Kubernetes/chess-app-client.yml 
+      name: ChangingBuildNumber
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'AzureResources'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -x
+          AKS_RG='node-js-cluster'
+          AKS_NAME='node-js-cluster'
+          ACR_NAME='$(ACR_NAME)'
+          az aks get-credentials -g $AKS_RG -n $AKS_NAME --admin 
+          az aks check-acr -g $AKS_RG -n $AKS_NAME --acr nodejschess
+          kubectl apply -f chess-app-client.yml
+        workingDirectory: '$(Build.SourcesDirectory)/Kubernetes/'
+
+- stage: DeploymentBackEnd
+  dependsOn: 
+  - Provision
+  - Conteinerization
+  jobs:
+  - job: Deploy
+    steps:
+    - bash: |
+        export BuildID=$(Build.BuildId)
+        sed -i -e "s/latest/$BuildID/g" $(Build.SourcesDirectory)/Kubernetes/chess-app-server.yml 
+        cat $(Build.SourcesDirectory)/Kubernetes/chess-app-server.yml
+      name: ChangingBuildNumber
+      
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'AzureResources'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -x
+          AKS_RG='node-js-cluster'
+          AKS_NAME='node-js-cluster'
+          ACR_NAME='$(ACR_NAME)'
+          az aks get-credentials -g $AKS_RG -n $AKS_NAME --admin 
+          az aks check-acr -g $AKS_RG -n $AKS_NAME --acr nodejschess
+          kubectl apply -f chess-app-server.yml
+        workingDirectory: '$(Build.SourcesDirectory)/Kubernetes/'       
+   
