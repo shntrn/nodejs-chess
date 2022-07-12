@@ -1,0 +1,20 @@
+version: 0.2
+
+env:
+  variables:
+    API_URL: ${API_URL}
+
+phases:
+  build:
+    commands:
+      - echo $API_URL
+      - sed -i -e "s/%API_URL_HERE%/$API_URL/g" assets/nodejs-chess-0.1.0.js
+artifacts:
+  files:
+    - '**/*'
+  secondary-artifacts:
+    artifact3:
+      files:
+        - '**/*'
+      base-directory: 'lib/client'
+      name: builds/client_changed/
